@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -42,6 +42,16 @@ import {
   getCategoryLabel,
 } from '../services/productService';
 import type { AdminProduct, Category, ProductSearchOptions } from '../services/productService';
+
+// Define error type for better type safety
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
 
 const AdminProducts = () => {
   const navigate = useNavigate();
@@ -89,7 +99,7 @@ const AdminProducts = () => {
   }, []);
 
   // Load products
-  const loadProducts = async (options: ProductSearchOptions = searchOptions) => {
+  const loadProducts = useCallback(async (options: ProductSearchOptions = searchOptions) => {
     try {
       setLoading(true);
       const response = await adminProductService.getProducts(options);
@@ -100,18 +110,19 @@ const AdminProducts = () => {
       } else {
         setError('Failed to load products');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading products:', error);
-      setError(error.response?.data?.message || 'Failed to load products');
+      const apiError = error as ApiError;
+      setError(apiError.response?.data?.message || 'Failed to load products');
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchOptions]);
 
   // Initial load
   useEffect(() => {
     loadProducts();
-  }, []);
+  }, [loadProducts]);
 
   // Handle search
   const handleSearch = () => {
@@ -121,14 +132,14 @@ const AdminProducts = () => {
   };
 
   // Handle filter change
-  const handleFilterChange = (field: string, value: any) => {
+  const handleFilterChange = (field: string, value: string | number) => {
     const newOptions = { ...searchOptions, [field]: value, page: 1 };
     setSearchOptions(newOptions);
     loadProducts(newOptions);
   };
 
   // Handle page change
-  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+  const handlePageChange = (_event: React.ChangeEvent<unknown>, page: number) => {
     const newOptions = { ...searchOptions, page };
     setSearchOptions(newOptions);
     loadProducts(newOptions);
@@ -148,9 +159,10 @@ const AdminProducts = () => {
       } else {
         setError(response.message || 'Failed to delete product');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting product:', error);
-      setError(error.response?.data?.message || 'Failed to delete product');
+      const apiError = error as ApiError;
+      setError(apiError.response?.data?.message || 'Failed to delete product');
     }
   };
 

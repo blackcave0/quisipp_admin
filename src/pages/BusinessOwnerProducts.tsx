@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -46,6 +46,21 @@ import {
   getWeightLabel,
 } from '../services/productService';
 import type { AdminProduct, AdoptedProduct, Category, WeightOption, ProductSearchOptions } from '../services/productService';
+
+// Define error type for better type safety
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
+// Extended search options for adopted products
+interface AdoptedProductSearchOptions extends ProductSearchOptions {
+  stockStatus?: string;
+}
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -96,7 +111,7 @@ const BusinessOwnerProducts = () => {
     sortOrder: 'desc',
   });
 
-  const [adoptedSearchOptions, setAdoptedSearchOptions] = useState<ProductSearchOptions>({
+  const [adoptedSearchOptions, setAdoptedSearchOptions] = useState<AdoptedProductSearchOptions>({
     search: '',
     category: '',
     stockStatus: '',
@@ -149,7 +164,7 @@ const BusinessOwnerProducts = () => {
   }, []);
 
   // Load available products
-  const loadAvailableProducts = async (options: ProductSearchOptions = searchOptions) => {
+  const loadAvailableProducts = useCallback(async (options: ProductSearchOptions = searchOptions) => {
     try {
       setLoading(true);
       const response = await businessOwnerProductService.searchProducts(options);
@@ -160,16 +175,17 @@ const BusinessOwnerProducts = () => {
       } else {
         setError('Failed to load available products');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading available products:', error);
-      setError(error.response?.data?.message || 'Failed to load available products');
+      const apiError = error as ApiError;
+      setError(apiError.response?.data?.message || 'Failed to load available products');
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchOptions]);
 
   // Load adopted products
-  const loadAdoptedProducts = async (options: ProductSearchOptions = adoptedSearchOptions) => {
+  const loadAdoptedProducts = useCallback(async (options: AdoptedProductSearchOptions = adoptedSearchOptions) => {
     try {
       setLoading(true);
       const response = await businessOwnerProductService.getAdoptedProducts(options);
@@ -180,13 +196,14 @@ const BusinessOwnerProducts = () => {
       } else {
         setError('Failed to load adopted products');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading adopted products:', error);
-      setError(error.response?.data?.message || 'Failed to load adopted products');
+      const apiError = error as ApiError;
+      setError(apiError.response?.data?.message || 'Failed to load adopted products');
     } finally {
       setLoading(false);
     }
-  };
+  }, [adoptedSearchOptions]);
 
   // Initial load based on active tab
   useEffect(() => {
@@ -195,10 +212,10 @@ const BusinessOwnerProducts = () => {
     } else {
       loadAdoptedProducts();
     }
-  }, [tabValue]);
+  }, [tabValue, loadAvailableProducts, loadAdoptedProducts]);
 
   // Handle tab change
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
     setError('');
     setSuccess('');
@@ -251,9 +268,10 @@ const BusinessOwnerProducts = () => {
       } else {
         setError(response.message || 'Failed to adopt product');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error adopting product:', error);
-      setError(error.response?.data?.message || 'Failed to adopt product');
+      const apiError = error as ApiError;
+      setError(apiError.response?.data?.message || 'Failed to adopt product');
     }
   };
 
@@ -443,7 +461,7 @@ const BusinessOwnerProducts = () => {
                 <Pagination
                   count={availablePagination.totalPages}
                   page={availablePagination.currentPage}
-                  onChange={(event, page) => {
+                  onChange={(_event, page) => {
                     const newOptions = { ...searchOptions, page };
                     setSearchOptions(newOptions);
                     loadAvailableProducts(newOptions);
@@ -603,7 +621,7 @@ const BusinessOwnerProducts = () => {
                 <Pagination
                   count={adoptedPagination.totalPages}
                   page={adoptedPagination.currentPage}
-                  onChange={(event, page) => {
+                  onChange={(_event, page) => {
                     const newOptions = { ...adoptedSearchOptions, page };
                     setAdoptedSearchOptions(newOptions);
                     loadAdoptedProducts(newOptions);
