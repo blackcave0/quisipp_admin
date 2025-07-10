@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 // Types
 export interface ProductImage {
@@ -48,7 +48,7 @@ export interface AdoptedProduct {
   availableWeights: string[];
   selectedWeight: string;
   productQuantity: number;
-  stockStatus: 'inStock' | 'outOfStock';
+  stockStatus: "inStock" | "outOfStock";
   originalProductId: string;
   businessOwnerPhone?: string;
   businessOwnerEmail?: string;
@@ -67,7 +67,7 @@ export interface ProductSearchOptions {
   page?: number;
   limit?: number;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
 }
 
 export interface PaginationInfo {
@@ -104,22 +104,24 @@ export interface WeightOption {
 export const adminProductService = {
   // Create new product
   createProduct: async (formData: FormData) => {
-    const response = await api.post('/admin/products', formData, {
+    const response = await api.post("/admin/products", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
   },
 
   // Get all admin products
-  getProducts: async (options: ProductSearchOptions = {}): Promise<ProductResponse> => {
+  getProducts: async (
+    options: ProductSearchOptions = {}
+  ): Promise<ProductResponse> => {
     const params = new URLSearchParams();
-    
+
     Object.entries(options).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+      if (value !== undefined && value !== null && value !== "") {
         if (Array.isArray(value)) {
-          params.append(key, value.join(','));
+          params.append(key, value.join(","));
         } else {
           params.append(key, value.toString());
         }
@@ -152,64 +154,86 @@ export const adminProductService = {
 // Business Owner Product Services
 export const businessOwnerProductService = {
   // Search available products
-  searchProducts: async (options: ProductSearchOptions = {}): Promise<ProductResponse> => {
+  searchProducts: async (
+    options: ProductSearchOptions = {}
+  ): Promise<ProductResponse> => {
     const params = new URLSearchParams();
-    
+
     Object.entries(options).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+      if (value !== undefined && value !== null && value !== "") {
         if (Array.isArray(value)) {
-          params.append(key, value.join(','));
+          params.append(key, value.join(","));
         } else {
           params.append(key, value.toString());
         }
       }
     });
 
-    const response = await api.get(`/business-owner/products/search?${params.toString()}`);
+    const response = await api.get(
+      `/business-owner/products/search?${params.toString()}`
+    );
     return response.data;
   },
 
   // Adopt product
-  adoptProduct: async (productId: string, adoptionData: {
-    selectedWeights: string[];
-    stockStatus?: 'inStock' | 'outOfStock';
-    productQuantity?: number;
-  }) => {
-    const response = await api.post(`/business-owner/products/adopt/${productId}`, adoptionData);
+  adoptProduct: async (
+    productId: string,
+    adoptionData: {
+      selectedWeights: string[];
+      stockStatus?: "inStock" | "outOfStock";
+      productQuantity?: number;
+    }
+  ) => {
+    const response = await api.post(
+      `/business-owner/products/adopt/${productId}`,
+      adoptionData
+    );
     return response.data;
   },
 
   // Get adopted products
-  getAdoptedProducts: async (options: ProductSearchOptions = {}): Promise<AdoptedProductResponse> => {
+  getAdoptedProducts: async (
+    options: ProductSearchOptions = {}
+  ): Promise<AdoptedProductResponse> => {
     const params = new URLSearchParams();
-    
+
     Object.entries(options).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+      if (value !== undefined && value !== null && value !== "") {
         if (Array.isArray(value)) {
-          params.append(key, value.join(','));
+          params.append(key, value.join(","));
         } else {
           params.append(key, value.toString());
         }
       }
     });
 
-    const response = await api.get(`/business-owner/products/adopted?${params.toString()}`);
+    const response = await api.get(
+      `/business-owner/products/adopted?${params.toString()}`
+    );
     return response.data;
   },
 
   // Update adopted product
-  updateAdoptedProduct: async (productId: string, updateData: {
-    stockStatus?: 'inStock' | 'outOfStock';
-    productQuantity?: number;
-    selectedWeight?: string;
-  }) => {
-    const response = await api.put(`/business-owner/products/adopted/${productId}`, updateData);
+  updateAdoptedProduct: async (
+    productId: string,
+    updateData: {
+      stockStatus?: "inStock" | "outOfStock";
+      productQuantity?: number;
+      selectedWeight?: string;
+    }
+  ) => {
+    const response = await api.put(
+      `/business-owner/products/adopted/${productId}`,
+      updateData
+    );
     return response.data;
   },
 
   // Remove adopted product
   removeAdoptedProduct: async (productId: string) => {
-    const response = await api.delete(`/business-owner/products/adopted/${productId}`);
+    const response = await api.delete(
+      `/business-owner/products/adopted/${productId}`
+    );
     return response.data;
   },
 };
@@ -217,46 +241,59 @@ export const businessOwnerProductService = {
 // Common Services
 export const productCommonService = {
   // Get categories
-  getCategories: async (): Promise<{ success: boolean; categories: Category[] }> => {
-    const response = await api.get('/categories');
+  getCategories: async (): Promise<{
+    success: boolean;
+    categories: Category[];
+  }> => {
+    const response = await api.get("/categories");
     return response.data;
   },
 
   // Get weight options
-  getWeightOptions: async (): Promise<{ success: boolean; weightOptions: WeightOption[] }> => {
-    const response = await api.get('/weight-options');
+  getWeightOptions: async (): Promise<{
+    success: boolean;
+    weightOptions: WeightOption[];
+  }> => {
+    const response = await api.get("/weight-options");
+    // console.log(response.data);
     return response.data;
   },
 
   // Health check
   healthCheck: async () => {
-    const response = await api.get('/health');
+    const response = await api.get("/health");
     return response.data;
   },
 };
 
 // Utility functions
 export const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
   }).format(price);
 };
 
 export const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString('en-IN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
+  return new Date(dateString).toLocaleDateString("en-IN", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
   });
 };
 
-export const getCategoryLabel = (categories: Category[], value: string): string => {
-  const category = categories.find(cat => cat.value === value);
+export const getCategoryLabel = (
+  categories: Category[],
+  value: string
+): string => {
+  const category = categories.find((cat) => cat.value === value);
   return category ? category.label : value;
 };
 
-export const getWeightLabel = (weightOptions: WeightOption[], value: string): string => {
-  const weight = weightOptions.find(w => w.value === value);
+export const getWeightLabel = (
+  weightOptions: WeightOption[],
+  value: string
+): string => {
+  const weight = weightOptions.find((w) => w.value === value);
   return weight ? weight.label : value;
 };

@@ -10,7 +10,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  FormGroup,
+  // Box,
+  // FormGroup,
   FormControlLabel,
   Checkbox,
   Grid,
@@ -204,7 +205,7 @@ const ProductUpload = () => {
     }
 
     if (images.length < 3) {
-      setError('Minimum 10 product images are required');
+      setError('Minimum 3 product images are required');
       return false;
     }
 
@@ -395,21 +396,55 @@ const ProductUpload = () => {
               <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
                 Available Weight Options
               </Typography>
-              <FormGroup row>
-                {weightOptions.map((weight) => (
-                  <FormControlLabel
-                    key={weight.value}
-                    control={
-                      <Checkbox
-                        checked={formData.availableWeights.includes(weight.value)}
-                        onChange={(e) => handleWeightChange(weight.value, e.target.checked)}
-                        disabled={loading}
-                      />
-                    }
-                    label={weight.label}
-                  />
-                ))}
-              </FormGroup>
+              {(() => {
+                // Group weight options by unit
+                const unitOrder = ['gm', 'kg', 'ml', 'ltr', 'custom'];
+                const grouped: { [unit: string]: typeof weightOptions } = {};
+                weightOptions.forEach((weight) => {
+                  // Try to extract unit from label (e.g., "500 gm" or "1 kg")
+                  const match = weight.label.match(/\b(gm|kg|ml|ltr|custom)\b/i);
+                  const unit = match ? match[1].toLowerCase() : 'custom';
+                  if (!grouped[unit]) grouped[unit] = [];
+                  grouped[unit].push(weight);
+                });
+
+                return (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      justifyContent: 'space-around',
+                      gap: 2,
+                      alignItems: 'center',
+                      alignContent: 'center',
+                      mt: 1,
+                    }}
+                  >
+                    {unitOrder.map((unit) =>
+                      grouped[unit] && grouped[unit].length > 0 ? (
+                        <Box key={unit}>
+                          <Typography variant="subtitle1" sx={{ mb: 1, textTransform: 'uppercase', mr: 1 }}>
+                            {unit}
+                          </Typography>
+                          {grouped[unit].map((weight) => (
+                            <FormControlLabel
+                              key={weight.value}
+                              control={
+                                <Checkbox
+                                  checked={formData.availableWeights.includes(weight.value)}
+                                  onChange={(e) => handleWeightChange(weight.value, e.target.checked)}
+                                  disabled={loading}
+                                />
+                              }
+                              label={weight.label}
+                            />
+                          ))}
+                        </Box>
+                      ) : null
+                    )}
+                  </Box>
+                );
+              })()}
             </Grid>
 
             {/* Tags */}
@@ -450,7 +485,7 @@ const ProductUpload = () => {
             {/* Image Upload */}
             <Grid size={12}>
               <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-                Product Images (Min: 10, Max: 20)
+                Product Images (Min: 3, Max: 20)
               </Typography>
 
               <Paper

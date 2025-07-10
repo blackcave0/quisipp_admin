@@ -15,6 +15,7 @@ const DEFAULT_ADMIN_KEY = "admin_secret_key";
 // Create axios instance with base URL
 const api = axios.create({
   baseURL: "https://quisipp-admin-backend.onrender.com/api",
+  // baseURL: "http://localhost:5000/api",
   headers: {
     "Content-Type": "application/json",
   },
