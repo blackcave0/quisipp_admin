@@ -1,11 +1,4 @@
 {
-  "redirects": [
-    {
-      "source": "https://quisipp.com/:path*",
-      "destination": "https://www.quisipp.com/:path*",
-      "permanent": true
-    }
-  ],
   "rewrites": [
     {
       "source": "/(.*)",
