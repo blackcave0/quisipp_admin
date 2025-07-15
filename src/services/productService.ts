@@ -18,6 +18,12 @@ export interface AdminProduct {
   productCategory: string;
   productBrand?: string;
   availableWeights: string[];
+  customWeights: { value: string | number; unit: string }[];
+  discountType: string;
+  discountValue: number;
+  discountStartDate?: string;
+  discountEndDate?: string;
+  discountedPrice: number;
   cloudinaryUrls: ProductImage[];
   createdBy: {
     _id: string;
@@ -40,6 +46,11 @@ export interface AdoptedProduct {
   productPrice: number;
   productCategory: string;
   productBrand?: string;
+  discountType: string;
+  discountValue: number;
+  discountStartDate?: string;
+  discountEndDate?: string;
+  discountedPrice: number;
   productImages: Array<{
     imageUrl: string;
     publicId: string;
@@ -149,6 +160,20 @@ export const adminProductService = {
     const response = await api.delete(`/admin/products/${id}`);
     return response.data;
   },
+
+  // Bulk create multiple products
+  createMultipleProducts: async (products: AdminProduct[]) => {
+    const response = await api.post("/admin/products/bulk", { products });
+    return response.data;
+  },
+
+  // Bulk delete multiple products
+  deleteMultipleProducts: async (productIds: string[]) => {
+    const response = await api.delete("/admin/products/bulk", {
+      data: { productIds },
+    });
+    return response.data;
+  },
 };
 
 // Business Owner Product Services
@@ -256,6 +281,15 @@ export const productCommonService = {
   }> => {
     const response = await api.get("/weight-options");
     // console.log(response.data);
+    return response.data;
+  },
+
+  // Get custom weight units
+  getCustomWeightUnits: async (): Promise<{
+    success: boolean;
+    customWeightUnits: WeightOption[];
+  }> => {
+    const response = await api.get("/custom-weight-units");
     return response.data;
   },
 

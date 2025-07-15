@@ -25,6 +25,9 @@ import {
   CircularProgress,
   Alert,
   InputAdornment,
+  Checkbox,
+  // Toolbar,
+  // Menu,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -33,6 +36,8 @@ import {
   Delete as DeleteIcon,
   Visibility as ViewIcon,
   FilterList as FilterIcon,
+  Upload as UploadIcon,
+  DeleteSweep as DeleteSweepIcon,
 } from '@mui/icons-material';
 import {
   adminProductService,
@@ -62,6 +67,11 @@ const AdminProducts = () => {
   const [selectedProduct, setSelectedProduct] = useState<AdminProduct | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+
+  // Bulk selection state
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
   // Search and filter state
   const [searchOptions, setSearchOptions] = useState<ProductSearchOptions>({
@@ -172,17 +182,91 @@ const AdminProducts = () => {
     setViewDialogOpen(true);
   };
 
+  // Handle bulk selection
+  const handleSelectProduct = (productId: string) => {
+    setSelectedProducts(prev =>
+      prev.includes(productId)
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedProducts.length === products.length) {
+      setSelectedProducts([]);
+    } else {
+      setSelectedProducts(products.map(p => p._id));
+    }
+  };
+
+  // Handle bulk delete
+  const handleBulkDelete = async () => {
+    if (selectedProducts.length === 0) return;
+
+    try {
+      setBulkDeleteLoading(true);
+      const response = await adminProductService.deleteMultipleProducts(selectedProducts);
+
+      if (response.success) {
+        setBulkDeleteDialogOpen(false);
+        setSelectedProducts([]);
+        loadProducts(); // Reload products
+
+        // Show success message with details
+        if (response.results.failed.length > 0) {
+          setError(`${response.results.successful.length} products deleted successfully, ${response.results.failed.length} failed.`);
+        } else {
+          setError(''); // Clear any existing errors
+        }
+      } else {
+        setError(response.message || 'Failed to delete products');
+      }
+    } catch (error: unknown) {
+      console.error('Error deleting products:', error);
+      const apiError = error as ApiError;
+      setError(apiError.response?.data?.message || 'Failed to delete products');
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Admin Products</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/admin/products/upload')}
-        >
-          Upload Product
-        </Button>
+        <Box>
+          <Typography variant="h4">Admin Products</Typography>
+          {selectedProducts.length > 0 && (
+            <Typography variant="body2" color="text.secondary">
+              {selectedProducts.length} product{selectedProducts.length > 1 ? 's' : ''} selected
+            </Typography>
+          )}
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {selectedProducts.length > 0 && (
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<DeleteSweepIcon />}
+              onClick={() => setBulkDeleteDialogOpen(true)}
+            >
+              Delete Selected ({selectedProducts.length})
+            </Button>
+          )}
+          <Button
+            variant="outlined"
+            startIcon={<UploadIcon />}
+            onClick={() => navigate('/admin/products/bulk-upload')}
+          >
+            Bulk Upload
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/admin/products/upload')}
+          >
+            Upload Product
+          </Button>
+        </Box>
       </Box>
 
       {/* Search and Filters */}
@@ -281,17 +365,53 @@ const AdminProducts = () => {
         </Paper>
       ) : (
         <>
+          {/* Bulk Selection Header */}
+          {products.length > 0 && (
+            <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Checkbox
+                checked={selectedProducts.length === products.length && products.length > 0}
+                indeterminate={selectedProducts.length > 0 && selectedProducts.length < products.length}
+                onChange={handleSelectAll}
+              />
+              <Typography variant="body2">
+                Select All ({products.length} products)
+              </Typography>
+            </Box>
+          )}
+
           <Grid container spacing={3}>
             {products.map((product) => (
               <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={product._id}>
-                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <CardMedia
-                    component="img"
-                    height="200"
-                    image={product.cloudinaryUrls[0]?.url || '/placeholder-image.jpg'}
-                    alt={product.productName}
-                    sx={{ objectFit: 'cover' }}
-                  />
+                <Card
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    border: selectedProducts.includes(product._id) ? '2px solid' : '1px solid',
+                    borderColor: selectedProducts.includes(product._id) ? 'primary.main' : 'divider',
+                  }}
+                >
+                  <Box sx={{ position: 'relative' }}>
+                    <Checkbox
+                      checked={selectedProducts.includes(product._id)}
+                      onChange={() => handleSelectProduct(product._id)}
+                      sx={{
+                        position: 'absolute',
+                        top: 8,
+                        left: 8,
+                        zIndex: 1,
+                        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                        borderRadius: '4px',
+                      }}
+                    />
+                    <CardMedia
+                      component="img"
+                      height="200"
+                      image={product.cloudinaryUrls[0]?.url || '/placeholder-image.jpg'}
+                      alt={product.productName}
+                      sx={{ objectFit: 'cover' }}
+                    />
+                  </Box>
                   <CardContent sx={{ flexGrow: 1 }}>
                     <Typography variant="h6" component="h2" gutterBottom noWrap>
                       {product.productName}
@@ -299,8 +419,14 @@ const AdminProducts = () => {
                     <Typography variant="body2" color="text.secondary" gutterBottom>
                       {getCategoryLabel(categories, product.productCategory)}
                     </Typography>
-                    <Typography variant="h6" color="primary" gutterBottom>
+                    <Typography variant="h5" color="primary" gutterBottom>
                       {formatPrice(product.productPrice)}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary" gutterBottom>
+                      <span style={{ textDecoration: 'line-through' }}>
+                        {formatPrice(product.productPrice)}
+                      </span>
+                      {formatPrice(product.discountedPrice)}
                     </Typography>
                     {product.productBrand && (
                       <Chip label={product.productBrand} size="small" sx={{ mb: 1 }} />
@@ -434,6 +560,9 @@ const AdminProducts = () => {
                     <strong>Price:</strong> {formatPrice(selectedProduct.productPrice)}
                   </Typography>
                   <Typography variant="body2" gutterBottom>
+                    <strong>Discounted Price:</strong> {formatPrice(selectedProduct.discountedPrice)}
+                  </Typography>
+                  <Typography variant="body2" gutterBottom>
                     <strong>Brand:</strong> {selectedProduct.productBrand || 'N/A'}
                   </Typography>
                   <Typography variant="body2" gutterBottom>
@@ -447,9 +576,20 @@ const AdminProducts = () => {
                 <Grid size={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle1" gutterBottom>Available Weights</Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {selectedProduct.availableWeights.map((weight) => (
+                    {/* {selectedProduct.availableWeights.map((weight) => (
                       <Chip key={weight} label={weight} size="small" />
-                    ))}
+                    ))} */}
+
+                    {
+                      [
+                        ...selectedProduct.availableWeights.map((weight) => (
+                          <Chip key={`available-${weight}`} label={weight} size="small" />
+                        )),
+                        ...selectedProduct.customWeights.map((weight: { value: string | number; unit: string }) => (
+                          <Chip key={`custom-${weight.value}-${weight.unit}`} label={`${weight.value} ${weight.unit}`} size="small" />
+                        ))
+                      ]
+                    }
                   </Box>
 
                   {selectedProduct.tags.length > 0 && (
@@ -486,6 +626,31 @@ const AdminProducts = () => {
             </DialogActions>
           </>
         )}
+      </Dialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <Dialog open={bulkDeleteDialogOpen} onClose={() => setBulkDeleteDialogOpen(false)}>
+        <DialogTitle>Delete Multiple Products</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete {selectedProducts.length} selected product{selectedProducts.length > 1 ? 's' : ''}?
+            This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBulkDeleteDialogOpen(false)} disabled={bulkDeleteLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleBulkDelete}
+            color="error"
+            variant="contained"
+            disabled={bulkDeleteLoading}
+            startIcon={bulkDeleteLoading ? <CircularProgress size={20} /> : <DeleteSweepIcon />}
+          >
+            {bulkDeleteLoading ? 'Deleting...' : `Delete ${selectedProducts.length} Products`}
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );
