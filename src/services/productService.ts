@@ -68,6 +68,20 @@ export interface AdoptedProduct {
   productUpdatedAt: string;
 }
 
+export interface BulkProductData {
+  productName: string;
+  productDescription: string;
+  productPrice: string;
+  productCategory: string;
+  productBrand?: string;
+  availableWeights?: string[];
+  tags?: string[];
+  discountType?: string;
+  discountValue?: string;
+  discountStartDate?: string;
+  discountEndDate?: string;
+}
+
 export interface ProductSearchOptions {
   search?: string;
   category?: string;
@@ -162,7 +176,7 @@ export const adminProductService = {
   },
 
   // Bulk create multiple products
-  createMultipleProducts: async (products: AdminProduct[]) => {
+  createMultipleProducts: async (products: BulkProductData[]) => {
     const response = await api.post("/admin/products/bulk", { products });
     return response.data;
   },
