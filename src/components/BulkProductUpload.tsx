@@ -23,6 +23,7 @@ import {
   IconButton,
   Tabs,
   Tab,
+  MenuItem,
 } from '@mui/material';
 import {
   Upload as UploadIcon,
@@ -32,17 +33,7 @@ import {
   CloudUpload as CloudUploadIcon,
 } from '@mui/icons-material';
 import { useDropzone } from 'react-dropzone';
-import { adminProductService } from '../services/productService';
-
-interface ProductData {
-  productName: string;
-  productDescription: string;
-  productPrice: string;
-  productCategory: string;
-  productBrand?: string;
-  availableWeights?: string[];
-  tags?: string[];
-}
+import { adminProductService, type BulkProductData } from '../services/productService';
 
 interface BulkUploadResult {
   successful: Array<{
@@ -63,7 +54,7 @@ const BulkProductUpload = () => {
   const navigate = useNavigate();
   const [tabValue, setTabValue] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [products, setProducts] = useState<ProductData[]>([]);
+  const [products, setProducts] = useState<BulkProductData[]>([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [uploadResult, setUploadResult] = useState<BulkUploadResult | null>(null);
@@ -138,7 +129,7 @@ const BulkProductUpload = () => {
         'personal care', 'baby care & diapers', 'pet care', 'other'
       ];
 
-      const parsedProducts: ProductData[] = [];
+      const parsedProducts: BulkProductData[] = [];
       const errors: string[] = [];
 
       for (let i = 1; i < lines.length; i++) {
@@ -148,7 +139,7 @@ const BulkProductUpload = () => {
           continue;
         }
 
-        const product: ProductData = {
+        const product: BulkProductData = {
           productName: '',
           productDescription: '',
           productPrice: '',
@@ -279,10 +270,14 @@ const BulkProductUpload = () => {
       productBrand: '',
       availableWeights: [],
       tags: [],
+      discountType: 'none',
+      discountValue: '',
+      discountStartDate: '',
+      discountEndDate: '',
     }]);
   };
 
-  const updateProduct = (index: number, field: keyof ProductData, value: any) => {
+  const updateProduct = (index: number, field: keyof BulkProductData, value: string | string[]) => {
     setProducts(prev => prev.map((product, i) =>
       i === index ? { ...product, [field]: value } : product
     ));
@@ -384,9 +379,10 @@ const BulkProductUpload = () => {
       } else {
         setError(response.message || 'Failed to upload products');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error uploading products:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to upload products';
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to upload products';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -495,7 +491,7 @@ const BulkProductUpload = () => {
               </Box>
 
               <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Product Name *"
@@ -504,7 +500,7 @@ const BulkProductUpload = () => {
                     required
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Product Price *"
@@ -514,7 +510,7 @@ const BulkProductUpload = () => {
                     required
                   />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <TextField
                     fullWidth
                     label="Product Description *"
@@ -525,7 +521,7 @@ const BulkProductUpload = () => {
                     required
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Product Category *"
@@ -535,7 +531,7 @@ const BulkProductUpload = () => {
                     placeholder="e.g., vegetables & fruits"
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Product Brand"
@@ -543,7 +539,7 @@ const BulkProductUpload = () => {
                     onChange={(e) => updateProduct(index, 'productBrand', e.target.value)}
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Available Weights"
@@ -552,7 +548,7 @@ const BulkProductUpload = () => {
                     placeholder="e.g., 250gm, 500gm, 1kg"
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Tags"
@@ -561,6 +557,78 @@ const BulkProductUpload = () => {
                     placeholder="e.g., organic, fresh, healthy"
                   />
                 </Grid>
+
+                {/* Discount Fields */}
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <TextField
+                    fullWidth
+                    select
+                    label="Discount Type"
+                    value={product.discountType || 'none'}
+                    onChange={(e) => updateProduct(index, 'discountType', e.target.value)}
+                  >
+                    <MenuItem value="none">No Discount</MenuItem>
+                    <MenuItem value="percentage">Percentage (%)</MenuItem>
+                    <MenuItem value="fixed">Fixed Amount</MenuItem>
+                  </TextField>
+                </Grid>
+
+                {product.discountType && product.discountType !== 'none' && (
+                  <>
+                    <Grid size={{ xs: 12, md: 4 }}>
+                      <TextField
+                        fullWidth
+                        label={`Discount Value ${product.discountType === 'percentage' ? '(%)' : '(₹)'}`}
+                        type="number"
+                        value={product.discountValue || ''}
+                        onChange={(e) => updateProduct(index, 'discountValue', e.target.value)}
+                        inputProps={{
+                          min: 0,
+                          step: product.discountType === 'percentage' ? 1 : 0.01,
+                          max: product.discountType === 'percentage' ? 100 : undefined
+                        }}
+                      />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 4 }}>
+                      <TextField
+                        fullWidth
+                        label="Discount Start Date"
+                        type="datetime-local"
+                        value={product.discountStartDate || ''}
+                        onChange={(e) => updateProduct(index, 'discountStartDate', e.target.value)}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 4 }}>
+                      <TextField
+                        fullWidth
+                        label="Discount End Date"
+                        type="datetime-local"
+                        value={product.discountEndDate || ''}
+                        onChange={(e) => updateProduct(index, 'discountEndDate', e.target.value)}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </Grid>
+
+                    {/* Show calculated discounted price */}
+                    {product.productPrice && product.discountValue && (
+                      <Grid size={12}>
+                        <Box sx={{ p: 2, bgcolor: 'success.light', borderRadius: 1, mt: 1 }}>
+                          <Typography variant="body2" color="success.dark">
+                            <strong>Discounted Price: ₹{
+                              product.discountType === 'percentage'
+                                ? (Number(product.productPrice) - (Number(product.productPrice) * Number(product.discountValue) / 100)).toFixed(2)
+                                : (Number(product.productPrice) - Number(product.discountValue)).toFixed(2)
+                            }</strong>
+                            {' '}(Original: ₹{Number(product.productPrice).toFixed(2)})
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                  </>
+                )}
               </Grid>
             </Paper>
           ))}
@@ -598,12 +666,12 @@ const BulkProductUpload = () => {
                     <TableCell>{product.productCategory}</TableCell>
                     <TableCell>{product.productBrand || '-'}</TableCell>
                     <TableCell>
-                      {product.availableWeights?.map((weight, i) => (
+                      {product.availableWeights?.map((weight: string, i: number) => (
                         <Chip key={i} label={weight} size="small" sx={{ mr: 0.5, mb: 0.5 }} />
                       ))}
                     </TableCell>
                     <TableCell>
-                      {product.tags?.map((tag, i) => (
+                      {product.tags?.map((tag: string, i: number) => (
                         <Chip key={i} label={tag} size="small" variant="outlined" sx={{ mr: 0.5, mb: 0.5 }} />
                       ))}
                     </TableCell>
