@@ -13,6 +13,8 @@ import Dashboard from './pages/Dashboard';
 import BusinessOwners from './pages/BusinessOwners';
 import AdminProducts from './pages/AdminProducts';
 import ProductUpload from './pages/ProductUpload';
+import ProductEdit from './pages/ProductEdit';
+import BulkProductUpload from './components/BulkProductUpload';
 
 // Create theme
 const theme = createTheme({
@@ -78,6 +80,8 @@ function App() {
               <Route path="business-owners" element={<BusinessOwners />} />
               <Route path="admin/products" element={<AdminProducts />} />
               <Route path="admin/products/upload" element={<ProductUpload />} />
+              <Route path="admin/products/edit/:id" element={<ProductEdit />} />
+              <Route path="admin/products/bulk-upload" element={<BulkProductUpload />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
           </Routes>

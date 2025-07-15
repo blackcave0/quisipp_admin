@@ -701,7 +701,39 @@ const BusinessOwnerProducts = () => {
                         label={getWeightLabel(weightOptions, weight)}
                       />
                     ))}
+                    {/* Show custom option if product has custom weights */}
+                    {selectedProduct.customWeights && selectedProduct.customWeights.length > 0 && (
+                      <FormControlLabel
+                        key="custom"
+                        control={
+                          <Checkbox
+                            checked={selectedWeights.includes('custom')}
+                            onChange={(e) => handleWeightChange('custom', e.target.checked)}
+                          />
+                        }
+                        label="Custom Weight/Volume"
+                      />
+                    )}
                   </FormGroup>
+
+                  {/* Show available custom weights */}
+                  {selectedProduct.customWeights && selectedProduct.customWeights.length > 0 && (
+                    <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Available Custom Options:
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {selectedProduct.customWeights.map((customWeight, index) => (
+                          <Chip
+                            key={index}
+                            label={`${customWeight.value} ${customWeight.unit}`}
+                            size="small"
+                            variant="outlined"
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
 
                   <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
                     Initial Settings

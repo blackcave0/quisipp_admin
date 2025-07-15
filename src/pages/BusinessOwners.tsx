@@ -131,17 +131,11 @@ const BusinessOwners = () => {
       setLoading(true);
       const response = await businessOwnerService.getAllBusinessOwners();
 
-      // Debug the full response
-      console.log('Full response:', response);
-
       // Extract the business owners data from the nested structure
       let ownersArray: BusinessOwner[] = [];
 
       if (response.data && response.data.businessOwners) {
         const ownersData = response.data.businessOwners;
-
-        // Debug the businessOwners data
-        console.log('Business owners data:', ownersData);
 
         if (Array.isArray(ownersData)) {
           // If it's already an array, use it directly
@@ -149,12 +143,10 @@ const BusinessOwners = () => {
         } else if (ownersData && typeof ownersData === 'object') {
           // If it's an object with a data property that is an array
           if (ownersData.data && Array.isArray(ownersData.data)) {
-            console.log('Found array in ownersData.data:', ownersData.data);
             ownersArray = ownersData.data;
           } else {
             // Try to extract values
             const values = Object.values(ownersData);
-            console.log('Extracted values:', values);
 
             // Look for an array in the values
             for (const value of values) {
@@ -167,7 +159,6 @@ const BusinessOwners = () => {
         }
       }
 
-      console.log('Final owners array:', ownersArray);
       setBusinessOwners(ownersArray);
       setLoading(false);
     } catch (error) {
@@ -191,9 +182,8 @@ const BusinessOwners = () => {
   }, []);
 
   // Handle admin key save
-  const handleAdminKeySave = (adminKey: string) => {
+  const handleAdminKeySave = () => {
     // After saving the admin key, retry fetching business owners
-    console.log(`Admin key saved: ${adminKey.substring(0, 3)}***`);
     fetchBusinessOwners();
   };
 
@@ -429,7 +419,7 @@ const BusinessOwners = () => {
             <TextField
               label="Address"
               name="address"
-              value={formData.busin}
+              value={formData.address}
               onChange={handleInputChange}
               fullWidth
               multiline
