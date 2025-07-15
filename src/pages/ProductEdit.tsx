@@ -114,7 +114,7 @@ const ProductEdit = () => {
 
         if (productRes.success) {
           const product: AdminProduct = productRes.product;
-          
+
           // Check if product has custom weights and add "custom" to availableWeights for UI
           const displayWeights = [...product.availableWeights];
           if (product.customWeights && product.customWeights.length > 0) {
@@ -135,9 +135,9 @@ const ProductEdit = () => {
             })) || [],
             discountType: product.discountType || 'none',
             discountValue: product.discountValue?.toString() || '',
-            discountStartDate: product.discountStartDate ? 
+            discountStartDate: product.discountStartDate ?
               new Date(product.discountStartDate).toISOString().slice(0, 16) : '',
-            discountEndDate: product.discountEndDate ? 
+            discountEndDate: product.discountEndDate ?
               new Date(product.discountEndDate).toISOString().slice(0, 16) : '',
             tags: product.tags || [],
             isActive: product.isActive,
@@ -321,7 +321,7 @@ const ProductEdit = () => {
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -352,7 +352,7 @@ const ProductEdit = () => {
 
       if (response.success) {
         setSuccess('Product updated successfully!');
-        
+
         // Navigate back to products list after a short delay
         setTimeout(() => {
           navigate('/admin/products');
@@ -360,9 +360,13 @@ const ProductEdit = () => {
       } else {
         setError(response.message || 'Failed to update product');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating product:', error);
-      setError(error.response?.data?.message || 'Failed to update product');
+      if (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data) {
+        setError((error.response.data as { message?: string }).message || 'Failed to update product');
+      } else {
+        setError('Failed to update product');
+      }
     } finally {
       setLoading(false);
     }
@@ -407,13 +411,13 @@ const ProductEdit = () => {
         <Box component="form" onSubmit={handleSubmit}>
           <Grid container spacing={3}>
             {/* Basic Information */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom>
                 Basic Information
               </Typography>
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="Product Name"
@@ -425,7 +429,7 @@ const ProductEdit = () => {
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="Product Price (₹)"
@@ -439,7 +443,7 @@ const ProductEdit = () => {
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <FormControl fullWidth required>
                 <InputLabel>Category</InputLabel>
                 <Select
@@ -457,7 +461,7 @@ const ProductEdit = () => {
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="Brand (Optional)"
@@ -469,13 +473,13 @@ const ProductEdit = () => {
             </Grid>
 
             {/* Discount Section */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
                 Discount Settings (Optional)
               </Typography>
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <FormControl fullWidth>
                 <InputLabel>Discount Type</InputLabel>
                 <Select
@@ -493,7 +497,7 @@ const ProductEdit = () => {
 
             {formData.discountType !== 'none' && (
               <>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
                     fullWidth
                     label={`Discount Value ${formData.discountType === 'percentage' ? '(%)' : '(₹)'}`}
@@ -502,15 +506,15 @@ const ProductEdit = () => {
                     value={formData.discountValue}
                     onChange={handleInputChange}
                     disabled={loading}
-                    inputProps={{ 
-                      min: 0, 
+                    inputProps={{
+                      min: 0,
                       step: formData.discountType === 'percentage' ? 1 : 0.01,
                       max: formData.discountType === 'percentage' ? 100 : undefined
                     }}
                   />
                 </Grid>
 
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
                     fullWidth
                     label="Discount Start Date (Optional)"
@@ -523,7 +527,7 @@ const ProductEdit = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
                     fullWidth
                     label="Discount End Date (Optional)"
@@ -538,11 +542,11 @@ const ProductEdit = () => {
 
                 {/* Show calculated discounted price */}
                 {formData.productPrice && formData.discountValue && (
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <Box sx={{ p: 2, bgcolor: 'success.light', borderRadius: 1, mt: 1 }}>
                       <Typography variant="body2" color="success.dark">
                         <strong>Discounted Price: ₹{
-                          formData.discountType === 'percentage' 
+                          formData.discountType === 'percentage'
                             ? (Number(formData.productPrice) - (Number(formData.productPrice) * Number(formData.discountValue) / 100)).toFixed(2)
                             : (Number(formData.productPrice) - Number(formData.discountValue)).toFixed(2)
                         }</strong>
@@ -554,7 +558,7 @@ const ProductEdit = () => {
               </>
             )}
 
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 label="Product Description"
@@ -569,7 +573,7 @@ const ProductEdit = () => {
             </Grid>
 
             {/* Weight Options */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
                 Available Weight/Volume Options
               </Typography>
@@ -592,7 +596,7 @@ const ProductEdit = () => {
 
             {/* Custom Weight Options */}
             {formData.availableWeights.includes('custom') && (
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
                   Custom Weight/Volume Options
                 </Typography>
@@ -603,7 +607,7 @@ const ProductEdit = () => {
                 {formData.customWeights.map((customWeight, index) => (
                   <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }}>
                     <Grid container spacing={2} alignItems="center">
-                      <Grid item xs={12} sm={3}>
+                      <Grid size={{ xs: 12, sm: 3 }}>
                         <TextField
                           fullWidth
                           label="Value"
@@ -614,7 +618,7 @@ const ProductEdit = () => {
                           disabled={loading}
                         />
                       </Grid>
-                      <Grid item xs={12} sm={3}>
+                      <Grid size={{ xs: 12, sm: 3 }}>
                         <FormControl fullWidth required>
                           <InputLabel>Unit</InputLabel>
                           <Select
@@ -631,7 +635,7 @@ const ProductEdit = () => {
                           </Select>
                         </FormControl>
                       </Grid>
-                      <Grid item xs={12} sm={5}>
+                      <Grid size={{ xs: 12, sm: 5 }}>
                         <TextField
                           fullWidth
                           label="Description (Optional)"
@@ -641,7 +645,7 @@ const ProductEdit = () => {
                           disabled={loading}
                         />
                       </Grid>
-                      <Grid item xs={12} sm={1}>
+                      <Grid size={{ xs: 12, sm: 1 }}>
                         <IconButton
                           color="error"
                           onClick={() => handleRemoveCustomWeight(index)}
@@ -667,11 +671,11 @@ const ProductEdit = () => {
             )}
 
             {/* Tags */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
                 Tags (Optional)
               </Typography>
-              
+
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                 {formData.tags.map((tag) => (
                   <Chip
@@ -708,7 +712,7 @@ const ProductEdit = () => {
             </Grid>
 
             {/* Product Status */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -722,7 +726,7 @@ const ProductEdit = () => {
             </Grid>
 
             {/* Submit Button */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 3 }}>
                 <Button
                   variant="outlined"

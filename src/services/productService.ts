@@ -18,7 +18,11 @@ export interface AdminProduct {
   productCategory: string;
   productBrand?: string;
   availableWeights: string[];
-  customWeights: { value: string | number; unit: string }[];
+  customWeights: {
+    value: string | number;
+    unit: string;
+    description?: string;
+  }[];
   discountType: string;
   discountValue: number;
   discountStartDate?: string;
