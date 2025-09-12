@@ -9,6 +9,15 @@ interface BusinessOwnerData {
   [key: string]: string | number | boolean | undefined;
 }
 
+// Define types for DeliveryPerson
+interface DeliveryPersonData {
+  email?: string;
+  phoneNumber?: string;
+  name?: string;
+  address?: string;
+  [key: string]: string | number | boolean | undefined;
+}
+
 // Default admin key to use if environment variable is not available
 const DEFAULT_ADMIN_KEY = "admin_secret_key";
 
@@ -31,6 +40,19 @@ api.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// Add response interceptor to handle rate limiting and other errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 429) {
+      // Handle rate limiting
+      console.warn("Rate limited by server. Please try again later.");
+      // You could show a toast notification here
+    }
+    return Promise.reject(error);
+  }
 );
 
 // Get admin key from environment or localStorage or use default
@@ -102,6 +124,33 @@ export const businessOwnerService = {
 
   updateBusinessOwner: (id: string, businessOwnerData: BusinessOwnerData) =>
     api.put(`/auth/update-business-owner/${id}`, businessOwnerData, {
+      headers: {
+        "x-admin-key": getAdminKey(),
+      },
+    }),
+};
+
+// Delivery person services
+export const deliveryPersonService = {
+  getAllDeliveryPersons: async () => {
+    try {
+      const response = await api.get("/auth/all-delivery-persons", {
+        headers: {
+          "x-admin-key": getAdminKey(),
+        },
+      });
+      return response;
+    } catch (error) {
+      console.error("Error in getAllDeliveryPersons:", error);
+      throw error;
+    }
+  },
+
+  createDeliveryPerson: (deliveryPersonData: DeliveryPersonData) =>
+    api.post("/auth/create-delivery-person", deliveryPersonData),
+
+  updateDeliveryPerson: (id: string, deliveryPersonData: DeliveryPersonData) =>
+    api.put(`/auth/update-delivery-person/${id}`, deliveryPersonData, {
       headers: {
         "x-admin-key": getAdminKey(),
       },
