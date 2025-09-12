@@ -11,6 +11,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import BusinessOwners from './pages/BusinessOwners';
+import DeliveryPersons from './pages/DeliveryPersons';
 import AdminProducts from './pages/AdminProducts';
 import ProductUpload from './pages/ProductUpload';
 import ProductEdit from './pages/ProductEdit';
@@ -78,6 +79,7 @@ function App() {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="business-owners" element={<BusinessOwners />} />
+              <Route path="delivery-persons" element={<DeliveryPersons />} />
               <Route path="admin/products" element={<AdminProducts />} />
               <Route path="admin/products/upload" element={<ProductUpload />} />
               <Route path="admin/products/edit/:id" element={<ProductEdit />} />

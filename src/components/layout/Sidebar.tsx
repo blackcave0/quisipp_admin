@@ -53,6 +53,11 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle }: SidebarProps) 
       path: '/business-owners',
     },
     {
+      text: 'Delivery Persons',
+      icon: <PeopleIcon />,
+      path: '/delivery-persons',
+    },
+    {
       text: 'Admin Products',
       icon: <InventoryIcon />,
       path: '/admin/products',
@@ -166,4 +171,4 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle }: SidebarProps) 
   );
 };
 
-export default Sidebar; 
+export default Sidebar;
