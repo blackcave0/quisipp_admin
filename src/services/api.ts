@@ -128,6 +128,48 @@ export const businessOwnerService = {
         "x-admin-key": getAdminKey(),
       },
     }),
+
+  // /**
+  //  * NEW FUNCTION: Sets the password for a specific business owner.
+  //  * This function calls the secure endpoint on your ADMIN backend.
+  //  * @param {string} id - The ID of the business owner.
+  //  * @param {string} password - The new password to set.
+  //  * @returns {Promise} - The axios promise from the API call.
+  //  */
+  setPasswordForBusinessOwner: (id: string, password: string) =>
+    api.put(
+      `/auth/business-owner/${id}/set-password`,
+      { password },
+      {
+        headers: {
+          "x-admin-key": getAdminKey(),
+        },
+      }
+    ),
+
+  /**
+   * Update business owner verification status
+   * @param {string} id - The ID of the business owner
+   * @param {boolean} isVerified - The verification status
+   * @param {string} password - Optional password to update
+   * @returns {Promise} - The axios promise from the API call
+   */
+  updateBusinessOwnerVerification: (
+    id: string,
+    isVerified: boolean,
+    password?: string
+  ) => {
+    const data: { isVerified: boolean; password?: string } = { isVerified };
+    if (password) {
+      data.password = password;
+    }
+
+    return api.put(`/auth/business-owner/${id}/verification`, data, {
+      headers: {
+        "x-admin-key": getAdminKey(),
+      },
+    });
+  },
 };
 
 // Delivery person services
