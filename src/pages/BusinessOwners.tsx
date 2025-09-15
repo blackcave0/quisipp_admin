@@ -27,6 +27,7 @@ import {
   Link,
   Container,
   Stack,
+  Tooltip,
   useTheme,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles'; // Import alpha for custom color shades
@@ -37,6 +38,7 @@ import {
   Edit as EditIcon,
   Add as AddIcon,
   Refresh as RefreshIcon,
+  VpnKey as VpnKeyIcon,
   Verified as VerifiedIcon,
   VerifiedUser as VerifiedUserIcon,
   Store as StoreIcon,
@@ -51,6 +53,8 @@ import {
   Badge as AadharIcon,
   VideoCameraFront as VideoIcon,
   Collections as CollectionsIcon,
+  Check as CheckIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import { businessOwnerService } from '../services/api'; // Assuming this import path is correct
 import AdminKeyDialog from '../components/auth/AdminKeyDialog'; // Assuming this import path is correct
@@ -147,6 +151,11 @@ const BusinessOwners = () => {
     severity: 'success',
   });
   const [adminKeyDialogOpen, setAdminKeyDialogOpen] = useState(false);
+
+  // ---- PASSWORD STATE -------
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const theme = useTheme();
 
@@ -341,6 +350,115 @@ const BusinessOwners = () => {
     }
   };
 
+
+  // -- PASSWORD DIALOG ---
+  const handleOpenpasswordDialog = (owner: BusinessOwner) => {
+    if (!owner._id) {
+      setSnackbar({
+        open: true,
+        message: 'Cannot change password for this business owner - missing ID',
+        severity: 'error',
+      })
+      return;
+    }
+
+    setEditingOwner(owner);
+    setPassword('') // clear previous password
+    setConfirmPassword('')
+    setPasswordDialogOpen(true);
+  }
+
+  // --- ADD THIS NEW FUNCTION TO HANDLE THE SUBMISSION ---
+  const handlePasswordSubmit = async () => {
+    if (!editingOwner) {
+      setSnackbar({ open: true, message: 'No owner selected.', severity: 'error' });
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      setSnackbar({ open: true, message: 'Password must be at least 6 characters long.', severity: 'error' });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setSnackbar({ open: true, message: 'Passwords do not match.', severity: 'error' });
+      return;
+    }
+
+    try {
+      // Call the API service function we created earlier
+      await businessOwnerService.setPasswordForBusinessOwner(editingOwner._id, password);
+
+      setSnackbar({
+        open: true,
+        message: 'Password set successfully!',
+        severity: 'success',
+      });
+
+      setPasswordDialogOpen(false); // Close the dialog on success
+      setEditingOwner(null);       // Clear the selected owner
+
+    } catch (error) {
+      console.error('Error setting password:', error);
+      let errorMessage = 'Failed to set password.';
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
+      }
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleToggleStatus = async (owner: BusinessOwner) => {
+    if (!owner._id) {
+      setSnackbar({
+        open: true,
+        message: 'Cannot update status - missing ID',
+        severity: 'error',
+      });
+      return;
+    }
+
+    try {
+      await businessOwnerService.updateBusinessOwnerVerification(owner._id, !owner.isVerified);
+
+      // Update local state
+      setBusinessOwners(prev => 
+        prev.map(o => 
+          o._id === owner._id 
+            ? { ...o, isVerified: !o.isVerified } 
+            : o
+        )
+      );
+
+      setSnackbar({
+        open: true,
+        message: `Status updated to ${!owner.isVerified ? 'Verified' : 'Pending'}`,
+        severity: 'success',
+      });
+    } catch (error) {
+      console.error('Error updating status:', error);
+      let errorMessage = 'Failed to update status.';
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
+      }
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
+    }
+  };
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Never';
     return new Date(dateString).toLocaleDateString(undefined, {
@@ -479,6 +597,31 @@ const BusinessOwners = () => {
                     >
                       <EditIcon />
                     </IconButton>
+
+                    {/* --- ADD THE NEW "SET PASSWORD" BUTTON HERE --- */}
+                    <IconButton
+                      color="secondary"
+                      onClick={() => handleOpenpasswordDialog(owner)}
+                      size="small"
+                      aria-label="set password"
+                      sx={{ ml: 1, '&:hover': { color: theme.palette.secondary.dark } }}
+                    >
+                      <VpnKeyIcon />
+                    </IconButton>
+                    {/* --- END OF NEW BUTTON --- */}
+
+                    <Tooltip title={owner.isVerified ? 'Mark as Pending' : 'Verify Business Owner'} arrow>
+                      <IconButton
+                        color={owner.isVerified ? 'error' : 'success'}
+                        onClick={() => handleToggleStatus(owner)}
+                        size="small"
+                        aria-label={owner.isVerified ? 'mark pending' : 'verify'}
+                        sx={{ ml: 1 }}
+                      >
+                        {owner.isVerified ? <CloseIcon /> : <CheckIcon />}
+                      </IconButton>
+                    </Tooltip>
+
                   </TableCell>
                 </TableRow>
               ))
@@ -550,6 +693,47 @@ const BusinessOwners = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* --- ADD THE NEW "SET PASSWORD" DIALOG JSX HERE --- */}
+      <Dialog open={passwordDialogOpen} onClose={() => setPasswordDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ bgcolor: theme.palette.secondary.main, color: theme.palette.common.white, py: 2, px: 3 }}>
+          <Typography variant="h6" component="span" fontWeight="bold">
+            Set Password for {editingOwner?.businessOwnerDetails?.businessName || editingOwner?.email}
+          </Typography>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 3 }}>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <TextField
+              label="New Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              fullWidth
+              required
+              variant="outlined"
+              autoFocus
+            />
+            <TextField
+              label="Confirm New Password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              fullWidth
+              required
+              variant="outlined"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, justifyContent: 'space-between' }}>
+          <Button onClick={() => setPasswordDialogOpen(false)} variant="outlined" color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={handlePasswordSubmit} variant="contained" color="secondary" sx={{ px: 4 }}>
+            Set Password
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* --- END OF NEW DIALOG --- */}
 
       {/* Details Dialog */}
       <Dialog
